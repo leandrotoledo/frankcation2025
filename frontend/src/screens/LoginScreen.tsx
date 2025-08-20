@@ -61,6 +61,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             bounces={true}
+            style={styles.scrollView}
           >
             {/* Magical Header */}
             <View style={styles.header}>
@@ -172,11 +173,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   
+  scrollView: {
+    flex: 1,
+  },
+  
   scrollContent: {
-    flexGrow: 1,
+    minHeight: 800, // Force minimum height to ensure scrolling
+    justifyContent: 'center',
     padding: MagicalTheme.spacing.lg,
-    paddingTop: MagicalTheme.spacing.xxl * 2, // Add extra top padding to push content down
-    paddingBottom: MagicalTheme.spacing.xxl,
   },
   
   header: {
