@@ -183,7 +183,7 @@ const CameraScreen: React.FC<Props> = ({ route, navigation }) => {
           let processedFile = file;
           
           // Compress images for better mobile data usage
-          if (file.type.startsWith('image/')) {
+          if (file.type && file.type.startsWith('image/')) {
             try {
               processedFile = await compressChallengeImageForWeb(file);
             } catch (error) {
@@ -191,7 +191,7 @@ const CameraScreen: React.FC<Props> = ({ route, navigation }) => {
           }
           
           const mediaUrl = URL.createObjectURL(processedFile);
-          const type = file.type.startsWith('video/') ? 'video' : 'photo';
+          const type = file.type && file.type.startsWith('video/') ? 'video' : 'photo';
           
           setSelectedFile(processedFile);
           setSelectedMedia(mediaUrl);
@@ -241,7 +241,7 @@ const CameraScreen: React.FC<Props> = ({ route, navigation }) => {
           let processedFile = file;
           
           // Compress images for better mobile data usage
-          if (file.type.startsWith('image/')) {
+          if (file.type && file.type.startsWith('image/')) {
             try {
               processedFile = await compressChallengeImageForWeb(file);
             } catch (error) {
@@ -249,7 +249,7 @@ const CameraScreen: React.FC<Props> = ({ route, navigation }) => {
           }
           
           const mediaUrl = URL.createObjectURL(processedFile);
-          const type = file.type.startsWith('video/') ? 'video' : 'photo';
+          const type = file.type && file.type.startsWith('video/') ? 'video' : 'photo';
           
           setSelectedFile(processedFile);
           setSelectedMedia(mediaUrl);

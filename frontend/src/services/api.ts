@@ -291,6 +291,9 @@ class ApiService {
 
   // Utility
   getMediaUrl(path: string): string {
+    if (!path) {
+      return ''; // Return empty string for undefined/null paths
+    }
     if (path.startsWith('http')) {
       return path;
     }
