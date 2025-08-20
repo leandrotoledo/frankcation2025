@@ -57,7 +57,11 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
           style={styles.keyboardContainer}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+          <ScrollView 
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            bounces={true}
+          >
             {/* Magical Header */}
             <View style={styles.header}>
               <View style={styles.titleContainer}>
@@ -170,14 +174,14 @@ const styles = StyleSheet.create({
   
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
     padding: MagicalTheme.spacing.lg,
+    paddingTop: MagicalTheme.spacing.xxl * 2, // Add extra top padding to push content down
+    paddingBottom: MagicalTheme.spacing.xxl,
   },
   
   header: {
     alignItems: 'center',
     marginBottom: MagicalTheme.spacing.xxl,
-    paddingTop: MagicalTheme.spacing.xl,
   },
   
   titleContainer: {
