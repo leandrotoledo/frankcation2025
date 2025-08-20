@@ -38,6 +38,9 @@ RUN mkdir -p /app/uploads/profiles /app/uploads/posts /app/uploads/challenges /a
 # Copy the binary from builder stage
 COPY --from=builder /app/main .
 
+# Copy the challenges CSV file
+COPY --from=builder /app/challenges.csv .
+
 # Create a non-root user
 RUN addgroup -g 1001 -S appgroup && \
     adduser -S appuser -u 1001 -G appgroup

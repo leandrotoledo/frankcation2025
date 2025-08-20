@@ -33,6 +33,11 @@ func main() {
 		log.Fatal("Failed to create tables:", err)
 	}
 
+	// Load challenges from CSV file
+	if err := db.LoadChallengesFromCSV("challenges.csv"); err != nil {
+		log.Printf("Warning: Failed to load challenges from CSV: %v", err)
+	}
+
 	// Only create default admin in development
 	if cfg.Environment == "development" {
 		if err := db.CreateDefaultAdmin(); err != nil {
