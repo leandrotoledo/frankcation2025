@@ -32,7 +32,7 @@ const ChallengesScreen: React.FC<Props> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [challengeFilter, setChallengeFilter] = useState<'all' | 'my' | 'available'>('all');
-  const [sortOption, setSortOption] = useState<'default' | 'points_asc' | 'points_desc'>('default');
+  const [sortOption, setSortOption] = useState<'alphabetical' | 'points_asc' | 'points_desc'>('alphabetical');
   const [showFilters, setShowFilters] = useState(false);
   const { user, refreshUser } = useAuth();
   const { showError } = useAlert();
@@ -66,12 +66,13 @@ const ChallengesScreen: React.FC<Props> = ({ navigation }) => {
     // 'all' shows everything, so no additional filtering needed
 
     // Apply sorting
-    if (sortOption === 'points_asc') {
+    if (sortOption === 'alphabetical') {
+      filtered.sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sortOption === 'points_asc') {
       filtered.sort((a, b) => a.points - b.points);
     } else if (sortOption === 'points_desc') {
       filtered.sort((a, b) => b.points - a.points);
     }
-    // 'default' keeps original order
 
     setFilteredChallenges(filtered);
   };
@@ -371,12 +372,12 @@ const ChallengesScreen: React.FC<Props> = ({ navigation }) => {
             />
           </Pressable>
           
-          {(challengeFilter !== 'all' || sortOption !== 'default') && (
+          {(challengeFilter !== 'all' || sortOption !== 'alphabetical') && (
             <Pressable 
               style={styles.clearFiltersButton}
               onPress={() => {
                 setChallengeFilter('all');
-                setSortOption('default');
+                setSortOption('alphabetical');
               }}
             >
               <Text style={styles.clearFiltersText}>Reset</Text>
@@ -419,7 +420,7 @@ const ChallengesScreen: React.FC<Props> = ({ navigation }) => {
           <View style={styles.filterRow}>
             <Text style={styles.filterLabel}>Sort:</Text>
             <View style={styles.filterButtons}>
-              {(['default', 'points_asc', 'points_desc'] as const).map((sort) => (
+              {(['alphabetical', 'points_asc', 'points_desc'] as const).map((sort) => (
                 <Pressable
                   key={sort}
                   style={[
@@ -428,7 +429,13 @@ const ChallengesScreen: React.FC<Props> = ({ navigation }) => {
                   ]}
                   onPress={() => setSortOption(sort)}
                 >
-                  {sort !== 'default' && (
+                  {sort === 'alphabetical' ? (
+                    <Ionicons 
+                      name="text" 
+                      size={10} 
+                      color={sortOption === sort ? "white" : MagicalTheme.colors.royalBlue} 
+                    />
+                  ) : (
                     <Ionicons 
                       name={sort === 'points_asc' ? "arrow-up" : "arrow-down"} 
                       size={10} 
@@ -439,7 +446,7 @@ const ChallengesScreen: React.FC<Props> = ({ navigation }) => {
                     styles.filterButtonText,
                     sortOption === sort && styles.filterButtonTextActive
                   ]}>
-                    {sort === 'default' ? 'Default' :
+                    {sort === 'alphabetical' ? 'A-Z' :
                      sort === 'points_asc' ? 'Low-High' : 'High-Low'}
                   </Text>
                 </Pressable>
