@@ -62,7 +62,7 @@ services:
     container_name: orlando-frontend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3003:3000"
     networks:
       - orlando-network
     depends_on:
