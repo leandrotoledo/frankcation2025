@@ -32,8 +32,8 @@ RUN apk --no-cache add ca-certificates sqlite
 # Create app directory
 WORKDIR /root/
 
-# Create uploads directory
-RUN mkdir -p /app/uploads/profiles /app/uploads/posts /app/uploads/challenges /app/uploads/temp
+# Create uploads and data directories
+RUN mkdir -p /app/uploads/profiles /app/uploads/posts /app/uploads/challenges /app/uploads/temp /app/data
 
 # Copy the binary from builder stage
 COPY --from=builder /app/main .
@@ -42,8 +42,8 @@ COPY --from=builder /app/main .
 RUN addgroup -g 1001 -S appgroup && \
     adduser -S appuser -u 1001 -G appgroup
 
-# Change ownership of uploads directory
-RUN chown -R appuser:appgroup /app/uploads
+# Change ownership of uploads and data directories
+RUN chown -R appuser:appgroup /app/uploads /app/data
 
 # Switch to non-root user
 USER appuser
