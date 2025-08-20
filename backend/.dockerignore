@@ -1,0 +1,40 @@
+# Git
+.git
+.gitignore
+
+# Environment files
+.env
+.env.*
+!.env.production
+
+# Documentation
+*.md
+README.md
+docs/
+
+# Development files
+.vscode/
+.idea/
+*.log
+*.sqlite
+*.db
+
+# Build artifacts
+main
+*.exe
+dist/
+build/
+
+# Go specific
+vendor/
+
+# OS specific
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml

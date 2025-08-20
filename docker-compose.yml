@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  database:
+    image: postgres:15-alpine
+    container_name: orlando-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: orlando_app
+      POSTGRES_USER: orlando_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password_change_this}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - orlando-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orlando_user -d orlando_app"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Go Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: orlando-backend
+    restart: unless-stopped
+    environment:
+      # Server Configuration
+      PORT: 8080
+      ENVIRONMENT: production
+      
+      # Database Configuration
+      DATABASE_URL: postgres://orlando_user:${DB_PASSWORD:-secure_password_change_this}@database:5432/orlando_app?sslmode=disable
+      DATABASE_TYPE: postgres
+      
+      # Security Configuration
+      JWT_SECRET: ${JWT_SECRET:-CHANGE-THIS-TO-A-STRONG-RANDOM-SECRET-AT-LEAST-32-CHARACTERS-LONG}
+      JWT_EXPIRATION_HOURS: 24
+      
+      # CORS Configuration
+      ALLOWED_ORIGINS: https://frankcation.com,https://www.frankcation.com
+      
+      # File Upload Configuration
+      UPLOAD_PATH: /app/uploads
+      MAX_FILE_SIZE: 52428800
+      ALLOWED_FILE_TYPES: image/jpeg,image/png,image/jpg,video/mp4,video/quicktime,video/mov
+      
+      # Rate Limiting
+      RATE_LIMIT: 50
+      RATE_LIMIT_BURST: 100
+      
+      # Logging
+      LOG_LEVEL: info
+    volumes:
+      - uploads_data:/app/uploads
+    ports:
+      - "8080:8080"
+    networks:
+      - orlando-network
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/leaderboard"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # React Frontend with Simple HTTP Server
+  # NOTE: This serves only static files on port 3000
+  # API proxying (/api/, /auth/, /uploads/) should be handled by external reverse proxy
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - EXPO_PUBLIC_API_BASE_URL=https://frankcation.com
+        - EXPO_PUBLIC_ENVIRONMENT=production
+        - EXPO_PUBLIC_ENABLE_DEBUG=false
+        - EXPO_PUBLIC_ENABLE_ANALYTICS=true
+    container_name: orlando-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    networks:
+      - orlando-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+# Named volumes for data persistence
+volumes:
+  postgres_data:
+    driver: local
+  uploads_data:
+    driver: local
+
+# Custom network
+networks:
+  orlando-network:
+    driver: bridge
+
+# Add labels for better organization
+x-common-labels: &common-labels
+  com.frankcation.project: "orlando-challenge"
+  com.frankcation.environment: "production"
