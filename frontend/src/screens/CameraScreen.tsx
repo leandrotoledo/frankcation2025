@@ -15,6 +15,7 @@ import {
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 import { Challenge } from '../types';
 import apiService from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -82,6 +83,34 @@ const PhotoPreview: React.FC<{ imageUri: string }> = ({ imageUri }) => {
       resizeMode="cover"
     />
   );
+};
+
+// Helper function to handle iOS asset URIs
+const convertIOSAssetToLocalURI = async (assetUri: string, mediaType: 'photo' | 'video'): Promise<string> => {
+  // If not iOS or already a file:// URI, return as-is
+  if (Platform.OS !== 'ios' || assetUri.startsWith('file://')) {
+    return assetUri;
+  }
+
+  try {
+    // Create a local file path in the cache directory
+    const fileExtension = mediaType === 'video' ? '.mp4' : '.jpg';
+    const fileName = `challenge_${Date.now()}${fileExtension}`;
+    const localUri = `${FileSystem.cacheDirectory}${fileName}`;
+
+    // Copy the asset to local storage
+    await FileSystem.copyAsync({
+      from: assetUri,
+      to: localUri,
+    });
+
+    console.log('iOS asset converted:', assetUri, '->', localUri);
+    return localUri;
+  } catch (error) {
+    console.error('Failed to convert iOS asset URI:', error);
+    // Return original URI as fallback
+    return assetUri;
+  }
 };
 
 const CameraScreen: React.FC<Props> = ({ route, navigation }) => {
@@ -221,11 +250,19 @@ const CameraScreen: React.FC<Props> = ({ route, navigation }) => {
       const asset = result.assets[0];
       const type = asset.type === 'video' ? 'video' : 'photo';
       
-      setSelectedMedia(asset.uri);
-      setMediaType(type);
-      
-      // Start background upload immediately
-      uploadMediaInBackground(null, asset.uri, type);
+      try {
+        // Convert iOS asset URI to local file URI if needed
+        const displayUri = await convertIOSAssetToLocalURI(asset.uri, type);
+        
+        setSelectedMedia(displayUri);
+        setMediaType(type);
+        
+        // Start background upload immediately with original asset URI
+        uploadMediaInBackground(null, asset.uri, type);
+      } catch (error) {
+        console.error('Failed to process camera image:', error);
+        showError('Failed to process captured media. Please try again.');
+      }
     }
   };
 
@@ -279,11 +316,19 @@ const CameraScreen: React.FC<Props> = ({ route, navigation }) => {
       const asset = result.assets[0];
       const type = asset.type === 'video' ? 'video' : 'photo';
       
-      setSelectedMedia(asset.uri);
-      setMediaType(type);
-      
-      // Start background upload immediately
-      uploadMediaInBackground(null, asset.uri, type);
+      try {
+        // Convert iOS asset URI to local file URI if needed
+        const displayUri = await convertIOSAssetToLocalURI(asset.uri, type);
+        
+        setSelectedMedia(displayUri);
+        setMediaType(type);
+        
+        // Start background upload immediately with original asset URI
+        uploadMediaInBackground(null, asset.uri, type);
+      } catch (error) {
+        console.error('Failed to process library media:', error);
+        showError('Failed to process selected media. Please try again.');
+      }
     }
   };
 
