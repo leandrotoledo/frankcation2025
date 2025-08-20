@@ -38,16 +38,12 @@ RUN mkdir -p /app/uploads/profiles /app/uploads/posts /app/uploads/challenges /a
 # Copy the binary from builder stage
 COPY --from=builder /app/main .
 
-# Copy any static files or configuration if needed
-COPY --from=builder /app/uploads ./uploads
-
 # Create a non-root user
 RUN addgroup -g 1001 -S appgroup && \
     adduser -S appuser -u 1001 -G appgroup
 
 # Change ownership of uploads directory
 RUN chown -R appuser:appgroup /app/uploads
-RUN chown -R appuser:appgroup /root/uploads
 
 # Switch to non-root user
 USER appuser
