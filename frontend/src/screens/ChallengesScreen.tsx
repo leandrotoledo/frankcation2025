@@ -41,14 +41,17 @@ const ChallengesScreen: React.FC<Props> = ({ navigation }) => {
   const loadChallenges = async () => {
     try {
       const data = await apiService.getChallenges();
-      setChallenges(data);
+      
+      // Filter out any invalid challenges that don't have IDs
+      const validChallenges = (data || []).filter(challenge => challenge && challenge.id);
+      setChallenges(validChallenges);
     } catch (error: any) {
       showError('Failed to load challenges');
     }
   };
 
   const applyFilters = () => {
-    let filtered = [...challenges];
+    let filtered = [...(challenges || [])];
 
     // Apply challenge type filter
     if (challengeFilter === 'my' && user) {
