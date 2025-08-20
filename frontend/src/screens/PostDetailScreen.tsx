@@ -118,7 +118,10 @@ const PostDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const loadComments = async () => {
     try {
       const data = await apiService.getComments(postId);
-      setComments(data);
+      
+      // Filter out any invalid comments that don't have IDs
+      const validComments = (data || []).filter(comment => comment && comment.id);
+      setComments(validComments);
     } catch (error: any) {
     } finally {
       setIsLoadingComments(false);
@@ -188,7 +191,7 @@ const PostDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   };
 
   const renderComment = (item: Comment) => (
-    <View key={item?.id || Math.random().toString()} style={styles.commentItem}>
+    <View key={item.id} style={styles.commentItem}>
       <View style={styles.commentAvatar}>
         {item.user_profile_image ? (
           <Image 

@@ -28,7 +28,10 @@ const LeaderboardScreen: React.FC = () => {
   const loadLeaderboard = async () => {
     try {
       const data = await apiService.getLeaderboard();
-      setUsers(data);
+      
+      // Filter out any invalid users that don't have IDs
+      const validUsers = (data || []).filter(user => user && user.id);
+      setUsers(validUsers);
     } catch (error: any) {
       showError('Failed to load leaderboard');
     }
@@ -161,7 +164,7 @@ const LeaderboardScreen: React.FC = () => {
         <FlatList
           data={users}
           renderItem={renderUser}
-          keyExtractor={(item) => item?.id?.toString() || Math.random().toString()}
+          keyExtractor={(item) => item.id.toString()}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}

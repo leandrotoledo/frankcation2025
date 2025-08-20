@@ -111,16 +111,19 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
     try {
       const newPosts = await apiService.getFeed(pageNum, 20);
       
+      // Filter out any invalid posts that don't have IDs
+      const validPosts = (newPosts || []).filter(post => post && post.id);
+      
       if (pageNum === 1 || isRefresh) {
-        setPosts(newPosts);
+        setPosts(validPosts);
         setPage(1);
       } else {
-        setPosts(prev => [...prev, ...newPosts]);
+        setPosts(prev => [...prev, ...validPosts]);
         setPage(pageNum);
       }
       
       // If we got fewer posts than requested, we've reached the end
-      setHasMore(newPosts.length === 20);
+      setHasMore(validPosts.length === 20);
     } catch (error: any) {
       if (pageNum === 1 || isRefresh) {
         showError('Failed to load posts');
@@ -417,7 +420,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         <FlatList
           data={posts}
           renderItem={renderPost}
-          keyExtractor={(item) => item?.id?.toString() || Math.random().toString()}
+          keyExtractor={(item) => item.id.toString()}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}

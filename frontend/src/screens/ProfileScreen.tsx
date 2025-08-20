@@ -51,7 +51,10 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
     
     try {
       const challenges = await apiService.getChallenges();
-      const userActiveChallenges = challenges.filter(
+      
+      // Filter for valid challenges with IDs, then filter for user's active challenges
+      const validChallenges = (challenges || []).filter(challenge => challenge && challenge.id);
+      const userActiveChallenges = validChallenges.filter(
         challenge => challenge.assigned_to === user.id && challenge.status === 'in_progress'
       );
       setActiveChallenges(userActiveChallenges);
@@ -199,7 +202,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         ) : activeChallenges.length > 0 ? (
           activeChallenges.map((challenge) => (
             <Pressable 
-              key={challenge?.id || Math.random().toString()} 
+              key={challenge.id} 
               style={styles.challengeItem}
               onPress={() => navigation?.navigate?.('Camera', { challenge })}
             >
