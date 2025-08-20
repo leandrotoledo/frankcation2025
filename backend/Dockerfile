@@ -30,10 +30,14 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates sqlite
 
 # Create app directory
-WORKDIR /root/
+WORKDIR /app
 
 # Create uploads and data directories
 RUN mkdir -p /app/uploads/profiles /app/uploads/posts /app/uploads/challenges /app/uploads/temp /app/data
+
+# Create a non-root user
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -S appuser -u 1001 -G appgroup
 
 # Copy the binary from builder stage
 COPY --from=builder /app/main .
@@ -41,12 +45,8 @@ COPY --from=builder /app/main .
 # Copy the challenges CSV file
 COPY --from=builder /app/challenges.csv .
 
-# Create a non-root user
-RUN addgroup -g 1001 -S appgroup && \
-    adduser -S appuser -u 1001 -G appgroup
-
-# Change ownership of uploads and data directories
-RUN chown -R appuser:appgroup /app/uploads /app/data
+# Change ownership of all app files and directories
+RUN chown -R appuser:appgroup /app
 
 # Switch to non-root user
 USER appuser
