@@ -199,7 +199,7 @@ const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         ) : activeChallenges.length > 0 ? (
           activeChallenges.map((challenge) => (
             <Pressable 
-              key={challenge.id} 
+              key={challenge?.id || Math.random().toString()} 
               style={styles.challengeItem}
               onPress={() => navigation?.navigate?.('Camera', { challenge })}
             >

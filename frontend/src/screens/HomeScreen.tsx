@@ -417,7 +417,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         <FlatList
           data={posts}
           renderItem={renderPost}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item?.id?.toString() || Math.random().toString()}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}

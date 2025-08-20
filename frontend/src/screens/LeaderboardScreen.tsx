@@ -161,7 +161,7 @@ const LeaderboardScreen: React.FC = () => {
         <FlatList
           data={users}
           renderItem={renderUser}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item?.id?.toString() || Math.random().toString()}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}

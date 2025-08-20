@@ -188,7 +188,7 @@ const PostDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   };
 
   const renderComment = (item: Comment) => (
-    <View key={item.id} style={styles.commentItem}>
+    <View key={item?.id || Math.random().toString()} style={styles.commentItem}>
       <View style={styles.commentAvatar}>
         {item.user_profile_image ? (
           <Image 
