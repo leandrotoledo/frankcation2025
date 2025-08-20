@@ -43,7 +43,7 @@ RUN npm install -g serve
 # Create app directory
 WORKDIR /app
 
-# Copy built app from builder stage
+# Copy built app from builder stage  
 COPY --from=builder /app/dist ./
 
 # Create a non-root user
