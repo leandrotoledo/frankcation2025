@@ -180,10 +180,12 @@ const styles = StyleSheet.create({
   },
   
   scrollContent: {
-    minHeight: '150%', // Force content to be taller than screen
+    flexGrow: 1,
+    minHeight: '120%', // Just slightly taller than screen to enable scroll
     paddingHorizontal: MagicalTheme.spacing.lg,
-    paddingTop: MagicalTheme.spacing.xxl * 3, // Push content down naturally
-    paddingBottom: MagicalTheme.spacing.xxl * 2, // Extra space at bottom
+    paddingTop: MagicalTheme.spacing.xxl * 2, // Center content naturally
+    paddingBottom: MagicalTheme.spacing.xl, // Minimal bottom padding
+    justifyContent: 'center',
   },
   
   header: {
