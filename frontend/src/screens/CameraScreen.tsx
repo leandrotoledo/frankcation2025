@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Pressable,
   TextInput,
-  Alert,
   Image,
   ScrollView,
   ActivityIndicator,
@@ -53,8 +52,7 @@ const VideoPreview: React.FC<{ videoUri: string }> = ({ videoUri }) => {
       allowsFullscreen={false}
       allowsPictureInPicture={false}
       contentFit="contain"
-      useNativeControls={true}
-      crossOrigin="anonymous"
+      nativeControls={true}
       playsInline={true}
     />
   );
@@ -63,6 +61,8 @@ const VideoPreview: React.FC<{ videoUri: string }> = ({ videoUri }) => {
 // Photo Preview Component for handling dynamic aspect ratios
 const PhotoPreview: React.FC<{ imageUri: string }> = ({ imageUri }) => {
   const [aspectRatio, setAspectRatio] = React.useState<ImageAspectRatio>({ ratio: 1, type: 'square' });
+  const [imageError, setImageError] = React.useState<boolean>(false);
+  const [imageLoaded, setImageLoaded] = React.useState<boolean>(false);
 
   React.useEffect(() => {
     const loadAspectRatio = async () => {
@@ -70,44 +70,90 @@ const PhotoPreview: React.FC<{ imageUri: string }> = ({ imageUri }) => {
         const imageAspectRatio = await getImageAspectRatio(imageUri);
         setAspectRatio(imageAspectRatio);
       } catch (error) {
+        // Silently fail and use default aspect ratio
       }
     };
     
     loadAspectRatio();
   }, [imageUri]);
 
+  if (imageError) {
+    return (
+      <View style={[styles.previewImage, { aspectRatio: aspectRatio.ratio, backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}>
+        <Ionicons name="image-outline" size={48} color="#999" />
+        <Text style={{ color: '#999', marginTop: 8, textAlign: 'center' }}>
+          Image failed to load
+        </Text>
+      </View>
+    );
+  }
+
   return (
-    <Image 
-      source={{ uri: imageUri }} 
-      style={[styles.previewImage, { aspectRatio: aspectRatio.ratio }]} 
-      resizeMode="cover"
-    />
+    <>
+      <Image 
+        source={{ uri: imageUri }} 
+        style={[styles.previewImage, { aspectRatio: aspectRatio.ratio }]} 
+        resizeMode="cover"
+        onError={() => {
+          setImageError(true);
+          setImageLoaded(false);
+        }}
+        onLoad={() => {
+          setImageError(false);
+          setImageLoaded(true);
+        }}
+        onLoadStart={() => {
+          setImageLoaded(false);
+          setImageError(false);
+        }}
+      />
+      {!imageLoaded && !imageError && (
+        <View style={[styles.previewImage, { aspectRatio: aspectRatio.ratio, backgroundColor: '#f8f8f8', justifyContent: 'center', alignItems: 'center', position: 'absolute' }]}>
+          <ActivityIndicator size="large" color={MagicalTheme.colors.disneyGold} />
+          <Text style={{ color: '#666', marginTop: 8 }}>Loading...</Text>
+        </View>
+      )}
+    </>
   );
 };
 
 // Helper function to handle iOS asset URIs
 const convertIOSAssetToLocalURI = async (assetUri: string, mediaType: 'photo' | 'video'): Promise<string> => {
-  // If not iOS or already a file:// URI, return as-is
-  if (Platform.OS !== 'ios' || assetUri.startsWith('file://')) {
+  // If not iOS, return as-is
+  if (Platform.OS !== 'ios') {
+    return assetUri;
+  }
+
+  // If already a file:// URI, return as-is
+  if (assetUri.startsWith('file://')) {
+    return assetUri;
+  }
+
+  // If it's an HTTP URL, return as-is
+  if (assetUri.startsWith('http://') || assetUri.startsWith('https://')) {
     return assetUri;
   }
 
   try {
-    // Create a local file path in the cache directory
+    // For any iOS asset that's not a file:// URI, try to convert it
     const fileExtension = mediaType === 'video' ? '.mp4' : '.jpg';
-    const fileName = `challenge_${Date.now()}${fileExtension}`;
+    const fileName = `challenge_${Date.now()}_${Math.random().toString(36).substr(2, 9)}${fileExtension}`;
     const localUri = `${FileSystem.cacheDirectory}${fileName}`;
-
+    
     // Copy the asset to local storage
     await FileSystem.copyAsync({
       from: assetUri,
       to: localUri,
     });
-
-    console.log('iOS asset converted:', assetUri, '->', localUri);
+    
+    // Verify the file exists
+    const fileInfo = await FileSystem.getInfoAsync(localUri);
+    if (!fileInfo.exists) {
+      throw new Error('File was not created successfully');
+    }
+    
     return localUri;
   } catch (error) {
-    console.error('Failed to convert iOS asset URI:', error);
     // Return original URI as fallback
     return assetUri;
   }
@@ -201,11 +247,16 @@ const CameraScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const handleTakePhoto = async () => {
     if (Platform.OS === 'web') {
-      // Use native HTML file input with camera capture for web
+      // Create and trigger file input for iOS Safari compatibility
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*,video/*';
       input.capture = 'environment'; // This enables camera on mobile browsers
+      input.style.position = 'fixed';
+      input.style.top = '-1000px';
+      input.style.left = '-1000px';
+      input.style.visibility = 'hidden';
+      
       input.onchange = async (e) => {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (file) {
@@ -216,6 +267,7 @@ const CameraScreen: React.FC<Props> = ({ route, navigation }) => {
             try {
               processedFile = await compressChallengeImageForWeb(file);
             } catch (error) {
+              // Use original file if compression fails
             }
           }
           
@@ -229,8 +281,23 @@ const CameraScreen: React.FC<Props> = ({ route, navigation }) => {
           // Start background upload immediately
           uploadMediaInBackground(processedFile, mediaUrl, type);
         }
+        
+        // Clean up
+        try {
+          document.body.removeChild(input);
+        } catch (error) {
+          // Input may have already been removed
+        }
       };
-      input.click();
+
+      // Add to DOM and trigger click (iOS Safari requires this)
+      document.body.appendChild(input);
+      
+      // Use setTimeout to ensure iOS Safari recognizes this as user-initiated
+      setTimeout(() => {
+        input.click();
+      }, 100);
+      
       return;
     }
 
@@ -238,12 +305,11 @@ const CameraScreen: React.FC<Props> = ({ route, navigation }) => {
     if (!hasPermission) return;
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: 'all',
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.5, // Optimized for mobile data usage
       videoMaxDuration: 60, // Increased to 60 seconds
-      videoQuality: ImagePicker.VideoQuality.Medium, // Optimized for mobile
     });
 
     if (!result.canceled && result.assets[0]) {
@@ -260,7 +326,6 @@ const CameraScreen: React.FC<Props> = ({ route, navigation }) => {
         // Start background upload immediately with original asset URI
         uploadMediaInBackground(null, asset.uri, type);
       } catch (error) {
-        console.error('Failed to process camera image:', error);
         showError('Failed to process captured media. Please try again.');
       }
     }
@@ -268,10 +333,15 @@ const CameraScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const handleSelectFromLibrary = async () => {
     if (Platform.OS === 'web') {
-      // Use native HTML file input for web
+      // Create and trigger file input for iOS Safari compatibility
       const input = document.createElement('input');
       input.type = 'file';
       input.accept = 'image/*,video/*';
+      input.style.position = 'fixed';
+      input.style.top = '-1000px';
+      input.style.left = '-1000px';
+      input.style.visibility = 'hidden';
+      
       input.onchange = async (e) => {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (file) {
@@ -282,6 +352,7 @@ const CameraScreen: React.FC<Props> = ({ route, navigation }) => {
             try {
               processedFile = await compressChallengeImageForWeb(file);
             } catch (error) {
+              // Use original file if compression fails
             }
           }
           
@@ -295,8 +366,23 @@ const CameraScreen: React.FC<Props> = ({ route, navigation }) => {
           // Start background upload immediately
           uploadMediaInBackground(processedFile, mediaUrl, type);
         }
+        
+        // Clean up
+        try {
+          document.body.removeChild(input);
+        } catch (error) {
+          // Input may have already been removed
+        }
       };
-      input.click();
+
+      // Add to DOM and trigger click (iOS Safari requires this)
+      document.body.appendChild(input);
+      
+      // Use setTimeout to ensure iOS Safari recognizes this as user-initiated
+      setTimeout(() => {
+        input.click();
+      }, 100);
+      
       return;
     }
 
@@ -304,12 +390,11 @@ const CameraScreen: React.FC<Props> = ({ route, navigation }) => {
     if (!hasPermission) return;
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'all',
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.5, // Optimized for mobile data usage
       videoMaxDuration: 60, // Increased to 60 seconds
-      videoQuality: ImagePicker.VideoQuality.Medium, // Optimized for mobile
     });
 
     if (!result.canceled && result.assets[0]) {
@@ -326,7 +411,6 @@ const CameraScreen: React.FC<Props> = ({ route, navigation }) => {
         // Start background upload immediately with original asset URI
         uploadMediaInBackground(null, asset.uri, type);
       } catch (error) {
-        console.error('Failed to process library media:', error);
         showError('Failed to process selected media. Please try again.');
       }
     }
