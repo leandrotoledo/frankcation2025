@@ -273,7 +273,8 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		log.Printf("File upload detected - filename: %s, size: %d", header.Filename, header.Size)
 
 		// Create uploads directory if it doesn't exist
-		if err := os.MkdirAll("./uploads/profiles", 0755); err != nil {
+		profilesDir := filepath.Join(h.cfg.UploadPath, "profiles")
+		if err := os.MkdirAll(profilesDir, 0755); err != nil {
 			log.Printf("Failed to create upload directory: %v", err)
 			http.Error(w, "Failed to create upload directory", http.StatusInternalServerError)
 			return
@@ -281,7 +282,7 @@ func (h *Handler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 		timestamp := time.Now().Unix()
 		filename := fmt.Sprintf("%d_%d_%s", user.ID, timestamp, header.Filename)
-		filepath := filepath.Join("./uploads/profiles", filename)
+		filepath := filepath.Join(profilesDir, filename)
 		
 		log.Printf("Saving file to: %s", filepath)
 
