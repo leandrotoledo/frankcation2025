@@ -181,15 +181,13 @@ const styles = StyleSheet.create({
   
   scrollContent: {
     flexGrow: 1,
-    minHeight: '120%', // Just slightly taller than screen to enable scroll
-    paddingHorizontal: MagicalTheme.spacing.lg,
-    paddingTop: MagicalTheme.spacing.xxl * 2, // Center content naturally
-    paddingBottom: MagicalTheme.spacing.xl, // Minimal bottom padding
-    justifyContent: 'center',
+    padding: MagicalTheme.spacing.lg,
+    paddingBottom: MagicalTheme.spacing.xxl * 4, // Only add bottom space to make content scrollable
   },
   
   header: {
     alignItems: 'center',
+    marginTop: MagicalTheme.spacing.xxl,
     marginBottom: MagicalTheme.spacing.xxl,
   },
   
