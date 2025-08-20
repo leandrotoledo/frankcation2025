@@ -65,9 +65,9 @@ const ChallengesScreen: React.FC<Props> = ({ navigation }) => {
     }
     // 'all' shows everything, so no additional filtering needed
 
-    // Apply sorting
+    // Apply sorting - handle challenges with empty titles gracefully
     if (sortOption === 'alphabetical') {
-      filtered.sort((a, b) => a.title.localeCompare(b.title));
+      filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
     } else if (sortOption === 'points_asc') {
       filtered.sort((a, b) => a.points - b.points);
     } else if (sortOption === 'points_desc') {
